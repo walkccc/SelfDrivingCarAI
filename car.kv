@@ -14,27 +14,27 @@
         PopMatrix
 
 <Ball1>:
-    size: 10,10
+    size: 10, 10
     canvas:
         Color:
-            rgba: 1,0,0,1
+            rgba: 1, 0, 0, 1
         Ellipse:
             pos: self.pos
             size: self.size
 <Ball2>:
-    size: 10,10
+    size: 10, 10
     canvas:
         Color:
-            rgba: 0,1,1,1
+            rgba: 0, 1, 0, 1
         Ellipse:
             pos: self.pos
             size: self.size
 
 <Ball3>:
-    size: 10,10
+    size: 10, 10
     canvas:
         Color:
-            rgba: 1,1,0,1
+            rgba: 0, 0, 1, 1
         Ellipse:
             pos: self.pos
             size: self.size
@@ -57,3 +57,15 @@
     Ball3:
         id: game_ball3
         center: self.parent.center
+
+    Label:
+        font_size: 30
+        center_x: 70
+        top: root.height
+        text: "Airport"
+
+    Label:
+        font_size: 30
+        center_x: root.width - 80
+        bottom: 0
+        text: "Downtown"

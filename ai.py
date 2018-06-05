@@ -1,4 +1,6 @@
-# AI for Self Driving Car
+###########################
+# AI for Self Driving Car #
+###########################
 
 # Importing the libraries
 
@@ -47,7 +49,7 @@ class ReplayMemory(object):
 
 # Implementing Deep Q Learning
 
-class Dqn():
+class DQN():
 
     def __init__(self, input_size, nb_action, gamma):
         self.gamma = gamma
