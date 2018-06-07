@@ -31,18 +31,22 @@ n_points = 0    # the total number of points in the last drawing
 length = 0      # the length of the last drawing
 
 # Getting our AI, which we call "dqn", and that contains our neural network that represents our Q-function
-dqn = DQN(5, 3, 0.9)                    # 5 signals, 3 actions, gamma = 0.9
+dqn = DQN(6, 3, 0.9)                    # 6 signals, 3 actions, gamma = 0.9
 action2rotation = [0, 20, -20]          # action = 0: no rotation, action = 1, rotate 20 degrees, action = 2, rotate -20 degrees
 last_reward = 0                         # initializing the last reward
+last_time = 30                          # initializing the last time
 scores = []                             # initializing the mean score curve (sliding window of the rewards) w.r.t time
 
 # Initializing the map
 first_update = True                     # using this trick to initialize the map only once
+startTime = time.time()
 def init():
     global sand                         # sand is an array that has as many cells as our graphic interface has pixels. Each cell has a one if there is sand, 0 otherwise.
     global goal_x                       # x-coordinate of the goal (where the car has to go, that is the up-left corner or the bot-right corner)
     global goal_y                       # y-coordinate of the goal (where the car has to go, that is the up-left corner or the bot-right corner)
     global first_update
+    global startTime
+    global last_time
     sand = np.zeros((longueur, largeur))# initializing the sand array with only zeros
     goal_x = 30                         # the goal to reach is at the upper left of the map (the x-coordinate is 20 and not 0 because the car gets bad reward if it touches the wall)
     goal_y = largeur - 30               # the goal to reach is at the upper left of the map (y-coordinate)
@@ -145,6 +149,8 @@ class Game(Widget):
         global goal_y
         global longueur
         global largeur
+        global startTime
+        global last_time
 
         longueur = self.width
         largeur = self.height
@@ -154,7 +160,7 @@ class Game(Widget):
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
         orientation = Vector(*self.car.velocity).angle((xx, yy)) / 180.
-        last_signal = [self.car.signal1, self.car.signal2, self.car.signal3, orientation, -orientation]
+        last_signal = [self.car.signal1, self.car.signal2, self.car.signal3, orientation, -orientation, last_time]
         action = dqn.update(last_reward, last_signal)
         scores.append(dqn.score())
         rotation = action2rotation[action]
@@ -186,11 +192,23 @@ class Game(Widget):
             self.car.y = self.height - 10
             last_reward = -1
 
+        last_time = time.time() - startTime
+        if last_time >= 10 and last_time < 20:
+            last_reward -= .3
+        elif last_time >= 20 and last_time < 30:
+            last_reward -= .5
+        elif last_time > 30:
+            last_reward -= 1
+
         if distance < 100:
             goal_x = self.width - goal_x
             goal_y = self.height - goal_y
+            startTime = time.time()
+            last_reward = 2
+        
+        print(startTime, last_time, last_reward)
         last_distance = distance
-
+        
 # Adding the painting tools
 class MyPaintWidget(Widget):
 
@@ -198,8 +216,10 @@ class MyPaintWidget(Widget):
         global length, n_points, last_x, last_y
         with self.canvas:
             Color(0.1171875, 0.53125, 0.65265)
-            d = 100.
-            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 10)
+            d = 30.
+            Ellipse(pos = (touch.x - d / 2, touch.y - d / 2), size = (d, d))
+            # touch.ud['line'] = Line(points = (touch.x, touch.y), width = 10)
+            touch.ud['line'] = Line(points = (touch.x, touch.y))
             last_x = int(touch.x)
             last_y = int(touch.y)
             n_points = 0
@@ -216,7 +236,7 @@ class MyPaintWidget(Widget):
             n_points += 1.
             density = n_points / (length)
             touch.ud['line'].width = int(20 * density + 1)
-            sand[int(touch.x) - 10 : int(touch.x) + 10, int(touch.y) - 10 : int(touch.y) + 10] = 1
+            sand[int(touch.x) - 20 : int(touch.x) + 20, int(touch.y) - 20 : int(touch.y) + 20] = 1
             last_x = x
             last_y = y
 
@@ -257,5 +277,4 @@ class CarApp(App):
 
 # Running the whole thing
 if __name__ == '__main__':
-        CarApp().run()
-        CarApp().run()
+    CarApp().run()

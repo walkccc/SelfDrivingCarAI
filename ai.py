@@ -63,8 +63,9 @@ class DQN():
     
     def select_action(self, state):
         probs = F.softmax(self.model(Variable(state, volatile = True)) * 7)   # T = 100
-        action = probs.multinomial()
-        return action.data[0, 0]
+        m = torch.distributions.Categorical(probs)
+        action = m.sample()
+        return action
     
     def learn(self, batch_state, batch_next_state, batch_reward, batch_action):
         outputs = self.model(batch_state).gather(1, batch_action.unsqueeze(1)).squeeze(1)
@@ -72,7 +73,7 @@ class DQN():
         target = self.gamma*next_outputs + batch_reward
         td_loss = F.smooth_l1_loss(outputs, target)
         self.optimizer.zero_grad()
-        td_loss.backward(retain_graph = True)
+        td_loss.backward()
         self.optimizer.step()
     
     def update(self, reward, new_signal):
