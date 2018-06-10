@@ -43,9 +43,9 @@ def init():
     global goal_x                       # x-coordinate of the goal (where the car has to go, that is the up-left corner or the bot-right corner)
     global goal_y                       # y-coordinate of the goal (where the car has to go, that is the up-left corner or the bot-right corner)
     global first_update
-    sand = np.zeros((longueur, largeur))# initializing the sand array with only zeros
+    sand = np.zeros((RIGHT, TOP))# initializing the sand array with only zeros
     goal_x = 30                         # the goal to reach is at the upper left of the map (the x-coordinate is 20 and not 0 because the car gets bad reward if it touches the wall)
-    goal_y = largeur - 30               # the goal to reach is at the upper left of the map (y-coordinate)
+    goal_y = TOP - 30               # the goal to reach is at the upper left of the map (y-coordinate)
     first_update = False                # trick to initialize the map only once
 
 # Initializing the last distance
@@ -53,35 +53,24 @@ last_distance = 0
 
 # Creating the car class
 class Car(Widget):
-    """
-    angle: the angle between the x-axis and the axis of the direction of the car
-    rotation: last rotation, which is either [0, 20, -20] degree(s)
-    velocity_x: the vector of coordinates velocity x
-    velocity_y: the vector of coordinates velocity y
-    sensor1: detecting if there is any sand in front of the car
-    sensor2: detecting if there is any sand at the left of the car
-    sensor3: detecting if there is any sand at the right of the car
-    signal1: the signal received by sensor1
-    signal2: the signal received by sensor2
-    signal3: the signal received by sensor3
-    """
-    angle = NumericProperty(0)
-    rotation = NumericProperty(0)
-    velocity_x = NumericProperty(0)
-    velocity_y = NumericProperty(0)
+
+    angle = NumericProperty(0)                                  # the angle between the x-axis and the axis of the direction of the car
+    rotation = NumericProperty(0)                               # last rotation, which is either [0, 20, -20] degree(s)
+    velocity_x = NumericProperty(0)                             # the vector of coordinates velocity x
+    velocity_y = NumericProperty(0)                             # the vector of coordinates velocity y
     velocity = ReferenceListProperty(velocity_x, velocity_y)
     sensor1_x = NumericProperty(0)
     sensor1_y = NumericProperty(0)
-    sensor1 = ReferenceListProperty(sensor1_x, sensor1_y)
+    sensor1 = ReferenceListProperty(sensor1_x, sensor1_y)       # detecting if there is any sand in front of the car
     sensor2_x = NumericProperty(0)
     sensor2_y = NumericProperty(0)
-    sensor2 = ReferenceListProperty(sensor2_x, sensor2_y)
+    sensor2 = ReferenceListProperty(sensor2_x, sensor2_y)       # detecting if there is any sand at the left of the car
     sensor3_x = NumericProperty(0)
     sensor3_y = NumericProperty(0)
-    sensor3 = ReferenceListProperty(sensor3_x, sensor3_y)
-    signal1 = NumericProperty(0)
-    signal2 = NumericProperty(0)
-    signal3 = NumericProperty(0)
+    sensor3 = ReferenceListProperty(sensor3_x, sensor3_y)       # detecting if there is any sand at the right of the car
+    signal1 = NumericProperty(0)                                # the signal received by sensor1
+    signal2 = NumericProperty(0)                                # the signal received by sensor2
+    signal3 = NumericProperty(0)                                # the signal received by sensor3
 
     def move(self, rotation):
         """
@@ -109,11 +98,11 @@ class Car(Widget):
         self.signal1 = int(np.sum(sand[int(self.sensor1_x) - 10: int(self.sensor1_x) + 10, int(self.sensor1_y) - 10: int(self.sensor1_y) + 10])) / 400.
         self.signal2 = int(np.sum(sand[int(self.sensor2_x) - 10: int(self.sensor2_x) + 10, int(self.sensor2_y) - 10: int(self.sensor2_y) + 10])) / 400.
         self.signal3 = int(np.sum(sand[int(self.sensor3_x) - 10: int(self.sensor3_x) + 10, int(self.sensor3_y) - 10: int(self.sensor3_y) + 10])) / 400.
-        if self.sensor1_x > longueur - 10 or self.sensor1_x < 10 or self.sensor1_y > largeur - 10 or self.sensor1_y < 10:
-            self.signal1 = 1.                                                       # full density of sand, terrible reward
-        if self.sensor2_x > longueur - 10 or self.sensor2_x < 10 or self.sensor2_y > largeur-10 or self.sensor2_y < 10:
+        if self.sensor1_x > RIGHT - 10 or self.sensor1_x < 10 or self.sensor1_y > TOP - 10 or self.sensor1_y < 10:
+            self.signal1 = 1.                                                                                       # full density of sand, terrible reward
+        if self.sensor2_x > RIGHT - 10 or self.sensor2_x < 10 or self.sensor2_y > TOP - 10 or self.sensor2_y < 10:
             self.signal2 = 1.
-        if self.sensor3_x > longueur - 10 or self.sensor3_x < 10 or self.sensor3_y > largeur-10 or self.sensor3_y < 10:
+        if self.sensor3_x > RIGHT - 10 or self.sensor3_x < 10 or self.sensor3_y > TOP - 10 or self.sensor3_y < 10:
             self.signal3 = 1.
 
 class Ball1(Widget):
@@ -143,11 +132,11 @@ class Game(Widget):
         global last_distance
         global goal_x
         global goal_y
-        global longueur
-        global largeur
+        global RIGHT
+        global TOP
 
-        longueur = self.width
-        largeur = self.height
+        RIGHT = self.width
+        TOP = self.height
         if first_update:
             init()
 
@@ -243,7 +232,7 @@ class CarApp(App):
     def clear_canvas(self, obj):
         global sand
         self.painter.canvas.clear()
-        sand = np.zeros((longueur, largeur))
+        sand = np.zeros((RIGHT, TOP))
 
     def save(self, obj):
         print("Saving dqn...")
