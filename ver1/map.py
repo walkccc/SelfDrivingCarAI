@@ -181,31 +181,16 @@ class Game(Widget):
 class MyPaintWidget(Widget):
 
     def on_touch_down(self, touch):
-        global length, n_points, last_x, last_y
         with self.canvas:
             Color(0.1171875, 0.53125, 0.65265)
-            d = 100.
-            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 30)
-            last_x = int(touch.x)
-            last_y = int(touch.y)
-            n_points = 0
-            length = 0
-            # sand[int(touch.x), int(touch.y)] = 1
-            sand[int(touch.x) - 10: int(touch.x) + 10, int(touch.y) - 10: int(touch.y) + 10] = 1
+            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 40)
+            sand[int(touch.x) - 20: int(touch.x) + 20, int(touch.y) - 20: int(touch.y) + 20] = 1
 
     def on_touch_move(self, touch):
-        global length, n_points, last_x, last_y
         if touch.button == 'left':
             touch.ud['line'].points += [touch.x, touch.y]
-            x = int(touch.x)
-            y = int(touch.y)
-            length += np.sqrt(max((x - last_x) ** 2 + (y - last_y) ** 2, 2))
-            n_points += 1.
-            density = n_points / (length)
-            touch.ud['line'].width = int(100 * density + 1)
+            touch.ud['line'].width = 40
             sand[int(touch.x) - 20 : int(touch.x) + 20, int(touch.y) - 20 : int(touch.y) + 20] = 1
-            last_x = x
-            last_y = y
 
 # Adding the API Buttons (clear, save and load)
 class CarApp(App):
@@ -219,18 +204,13 @@ class CarApp(App):
         clearButton = Button(text = 'CLEAR')
         saveButton = Button(text = 'SAVE', pos = (parent.width, 0))
         loadButton = Button(text = 'LOAD', pos = (2 * parent.width, 0))
-        pngButton = Button(text = 'PNG', pos = (3 * parent.width, 0))
-
         clearButton.bind(on_release = self.clear_canvas)
         saveButton.bind(on_release = self.save)
         loadButton.bind(on_release = self.load)
-        pngButton.bind(on_release = self.save_png)
-
         parent.add_widget(self.painter)
         parent.add_widget(clearButton)
         parent.add_widget(saveButton)
         parent.add_widget(loadButton)
-        parent.add_widget(pngButton)
         return parent
 
     def clear_canvas(self, obj):
@@ -247,10 +227,6 @@ class CarApp(App):
     def load(self, obj):
         print("Loading last saved dqn...")
         dqn.load()
-        
-    def save_png(self, obj):
-        print("Saving png...")
-        self.parent.export_to_png('a.png')
 
 # Running the whole thing
 if __name__ == '__main__':
