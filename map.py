@@ -29,7 +29,7 @@ length = 0      # the length of the last drawing
 
 # Getting our AI, which we call "dqn", and that contains our neural network that represents our Q-function
 dqn = DQN(5, 3, 0.9)                    # 5 signals, 3 actions, gamma = 0.9
-action2rotation = [0, 15, -10]          # action = 0: no rotation, action = 1, rotate 20 degrees, action = 2, rotate -20 degrees
+action2rotation = [0, 15, -15]          # action = 0: no rotation, action = 1, rotate 20 degrees, action = 2, rotate -20 degrees
 last_reward = 0                         # initializing the last reward
 scores = []                             # initializing the mean score curve (sliding window of the rewards) w.r.t time
 
