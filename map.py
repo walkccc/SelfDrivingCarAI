@@ -18,11 +18,8 @@ from kivy.properties import NumericProperty, ReferenceListProperty, ObjectProper
 from kivy.vector import Vector
 from kivy.clock import Clock
 
-# Importing the DQN (Deep Q-Network) object from ai.py
 from ai import DQN
-
-# Adding this line if we don't want the right click to put a red point
-Config.set('input', 'mouse', 'mouse, multitouch_on_demand')
+Config.set('input', 'mouse', 'mouse, multitouch_on_demand')     # Adding this line if we don't want the right click to put a red point
 
 # Introducing last_x and last_y, used to keep the last point in memory when we draw the sand on the map
 last_x = 0      # last coordinates of x in the last drawing
@@ -32,7 +29,7 @@ length = 0      # the length of the last drawing
 
 # Getting our AI, which we call "dqn", and that contains our neural network that represents our Q-function
 dqn = DQN(5, 3, 0.9)                    # 5 signals, 3 actions, gamma = 0.9
-action2rotation = [0, 20, -20]          # action = 0: no rotation, action = 1, rotate 20 degrees, action = 2, rotate -20 degrees
+action2rotation = [0, 15, -10]          # action = 0: no rotation, action = 1, rotate 20 degrees, action = 2, rotate -20 degrees
 last_reward = 0                         # initializing the last reward
 scores = []                             # initializing the mean score curve (sliding window of the rewards) w.r.t time
 
@@ -43,9 +40,9 @@ def init():
     global goal_x                       # x-coordinate of the goal (where the car has to go, that is the up-left corner or the bot-right corner)
     global goal_y                       # y-coordinate of the goal (where the car has to go, that is the up-left corner or the bot-right corner)
     global first_update
-    sand = np.zeros((RIGHT, TOP))# initializing the sand array with only zeros
+    sand = np.zeros((RIGHT, TOP))       # initializing the sand array with only zeros
     goal_x = 30                         # the goal to reach is at the upper left of the map (the x-coordinate is 20 and not 0 because the car gets bad reward if it touches the wall)
-    goal_y = TOP - 30               # the goal to reach is at the upper left of the map (y-coordinate)
+    goal_y = TOP - 30                   # the goal to reach is at the upper left of the map (y-coordinate)
     first_update = False                # trick to initialize the map only once
 
 # Initializing the last distance
@@ -148,12 +145,12 @@ class Game(Widget):
         scores.append(dqn.score())
         rotation = action2rotation[action]
         self.car.move(rotation)
-        distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
+        distance = np.sqrt((self.car.x - goal_x) ** 2 + (self.car.y - goal_y) ** 2)
         self.ball1.pos = self.car.sensor1
         self.ball2.pos = self.car.sensor2
         self.ball3.pos = self.car.sensor3
 
-        if sand[int(self.car.x),int(self.car.y)] > 0:
+        if sand[int(self.car.x), int(self.car.y)] > 0:
             self.car.velocity = Vector(1, 0).rotate(self.car.angle)
             last_reward = -1
         else: # otherwise
@@ -188,12 +185,13 @@ class MyPaintWidget(Widget):
         with self.canvas:
             Color(0.1171875, 0.53125, 0.65265)
             d = 100.
-            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 10)
+            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 30)
             last_x = int(touch.x)
             last_y = int(touch.y)
             n_points = 0
             length = 0
-            sand[int(touch.x), int(touch.y)] = 1
+            # sand[int(touch.x), int(touch.y)] = 1
+            sand[int(touch.x) - 10: int(touch.x) + 10, int(touch.y) - 10: int(touch.y) + 10] = 1
 
     def on_touch_move(self, touch):
         global length, n_points, last_x, last_y
@@ -201,32 +199,38 @@ class MyPaintWidget(Widget):
             touch.ud['line'].points += [touch.x, touch.y]
             x = int(touch.x)
             y = int(touch.y)
-            length += np.sqrt(max((x - last_x)**2 + (y - last_y)**2, 2))
+            length += np.sqrt(max((x - last_x) ** 2 + (y - last_y) ** 2, 2))
             n_points += 1.
             density = n_points / (length)
-            touch.ud['line'].width = int(20 * density + 1)
-            sand[int(touch.x) - 10 : int(touch.x) + 10, int(touch.y) - 10 : int(touch.y) + 10] = 1
+            touch.ud['line'].width = int(100 * density + 1)
+            sand[int(touch.x) - 20 : int(touch.x) + 20, int(touch.y) - 20 : int(touch.y) + 20] = 1
             last_x = x
             last_y = y
 
 # Adding the API Buttons (clear, save and load)
 class CarApp(App):
+    global parent
 
     def build(self):
         parent = Game()
         parent.serve_car()
         Clock.schedule_interval(parent.update, 1.0 / 60.0)
         self.painter = MyPaintWidget()
-        clearBtn = Button(text = 'CLEAR')
-        saveBtn = Button(text = 'SAVE', pos = (parent.width, 0))
-        loadBtn = Button(text = 'LOAD', pos = (2 * parent.width, 0))
-        clearBtn.bind(on_release = self.clear_canvas)
-        saveBtn.bind(on_release = self.save)
-        loadBtn.bind(on_release = self.load)
+        clearButton = Button(text = 'CLEAR')
+        saveButton = Button(text = 'SAVE', pos = (parent.width, 0))
+        loadButton = Button(text = 'LOAD', pos = (2 * parent.width, 0))
+        pngButton = Button(text = 'PNG', pos = (3 * parent.width, 0))
+
+        clearButton.bind(on_release = self.clear_canvas)
+        saveButton.bind(on_release = self.save)
+        loadButton.bind(on_release = self.load)
+        pngButton.bind(on_release = self.save_png)
+
         parent.add_widget(self.painter)
-        parent.add_widget(clearBtn)
-        parent.add_widget(saveBtn)
-        parent.add_widget(loadBtn)
+        parent.add_widget(clearButton)
+        parent.add_widget(saveButton)
+        parent.add_widget(loadButton)
+        parent.add_widget(pngButton)
         return parent
 
     def clear_canvas(self, obj):
@@ -243,8 +247,12 @@ class CarApp(App):
     def load(self, obj):
         print("Loading last saved dqn...")
         dqn.load()
+        
+    def save_png(self, obj):
+        print("Saving png...")
+        self.parent.export_to_png('a.png')
 
 # Running the whole thing
 if __name__ == '__main__':
-        CarApp().run()
-        CarApp().run()
+    CarApp().run()
+    CarApp().run()
