@@ -30,6 +30,7 @@ last_signal3 = 0
 last_x = 0
 last_y = 0
 GOAL = 'airport'
+BOUNDARY = 20
 
 # Getting our AI, which we call "dqn", and that contains our neural network that represents our Q-function
 
@@ -105,11 +106,11 @@ class Car(Widget):
         self.signal1 = int(np.sum(sand[int(self.sensor1_x) - 10: int(self.sensor1_x) + 10, int(self.sensor1_y) - 10: int(self.sensor1_y) + 10])) / 400.
         self.signal2 = int(np.sum(sand[int(self.sensor2_x) - 10: int(self.sensor2_x) + 10, int(self.sensor2_y) - 10: int(self.sensor2_y) + 10])) / 400.
         self.signal3 = int(np.sum(sand[int(self.sensor3_x) - 10: int(self.sensor3_x) + 10, int(self.sensor3_y) - 10: int(self.sensor3_y) + 10])) / 400.
-        if self.sensor1_x > RIGHT - 10 or self.sensor1_x < 10 or self.sensor1_y > TOP - 10 or self.sensor1_y < 10:
+        if self.sensor1_x > RIGHT - BOUNDARY or self.sensor1_x < BOUNDARY or self.sensor1_y > TOP - BOUNDARY or self.sensor1_y < BOUNDARY:
             self.signal1 = 1.                                                                                       # full density of sand, terrible reward
-        if self.sensor2_x > RIGHT - 10 or self.sensor2_x < 10 or self.sensor2_y > TOP - 10 or self.sensor2_y < 10:
+        if self.sensor2_x > RIGHT - BOUNDARY or self.sensor2_x < BOUNDARY or self.sensor2_y > TOP - BOUNDARY or self.sensor2_y < BOUNDARY:
             self.signal2 = 1.
-        if self.sensor3_x > RIGHT - 10 or self.sensor3_x < 10 or self.sensor3_y > TOP - 10 or self.sensor3_y < 10:
+        if self.sensor3_x > RIGHT - BOUNDARY or self.sensor3_x < BOUNDARY or self.sensor3_y > TOP - BOUNDARY or self.sensor3_y < BOUNDARY:
             self.signal3 = 1.
 
 class Ball1(Widget):
@@ -172,8 +173,6 @@ class Game(Widget):
 
         if sand[int(self.car.x), int(self.car.y)] > 0:
             self.car.velocity = Vector(1, 0).rotate(self.car.angle)
-            # self.car.x = last_x
-            # self.car.y = last_y
             last_reward = -3
         else:
             self.car.velocity = Vector(6, 0).rotate(self.car.angle)
@@ -187,18 +186,17 @@ class Game(Widget):
         last_reward += (last_distance - distance) / 250.0
         last_reward += -3 * (self.car.signal3 - 1.0) * (self.car.signal3)
 
-        BOUNDARAY = 20
-        if self.car.x < BOUNDARAY:
-            self.car.x = BOUNDARAY
+        if self.car.x < BOUNDARY:
+            self.car.x = BOUNDARY
             last_reward += -1               # = -1
-        if self.car.x > self.width - BOUNDARAY:
-            self.car.x = self.width - BOUNDARAY
+        if self.car.x > self.width - BOUNDARY:
+            self.car.x = self.width - BOUNDARY
             last_reward += -1               # = -1
-        if self.car.y < BOUNDARAY:
-            self.car.y = BOUNDARAY
+        if self.car.y < BOUNDARY:
+            self.car.y = BOUNDARY
             last_reward += -1               # = -1
-        if self.car.y > self.height - BOUNDARAY:
-            self.car.y = self.height - BOUNDARAY
+        if self.car.y > self.height - BOUNDARY:
+            self.car.y = self.height - BOUNDARY
             last_reward += -1               # = -1
 
         if distance < 100:
@@ -210,6 +208,8 @@ class Game(Widget):
             elif GOAL == 'downtown':
                 print('Reach Downtown!')
                 GOAL = 'airport'
+            
+            # self.car.center = self.center # Another scheme
             
         last_distance = distance
         last_x = self.car.x
