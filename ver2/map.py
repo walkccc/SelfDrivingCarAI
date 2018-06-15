@@ -3,12 +3,13 @@
 ###################################
 
 # Importing the libraries
+
 import numpy as np
 from random import random, randint
 import matplotlib.pyplot as plt
-import time
 
 # Importing the Kivy packages
+
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.button import Button
@@ -22,11 +23,16 @@ from ai import DQN
 Config.set('input', 'mouse', 'mouse, multitouch_on_demand')     # Adding this line if we don't want the right click to put a red point
 
 # Introducing last_signal1, last_signal2 and last_signal3 to let the brain know if it's getting further or closer to the obstacle.
+
 last_signal1 = 0
 last_signal2 = 0
 last_signal3 = 0
+last_x = 0
+last_y = 0
+GOAL = 'airport'
 
 # Getting our AI, which we call "dqn", and that contains our neural network that represents our Q-function
+
 dqn = DQN(8, 3, 0.9)                    # 5 signals, 3 actions, gamma = 0.9
 action2rotation = [0, 10, -10]          # action = 0: no rotation, action = 1, rotate 10 degrees, action = 2, rotate -10 degrees
 last_reward = 0                         # initializing the last reward
@@ -45,9 +51,11 @@ def init():
     first_update = False                # trick to initialize the map only once
 
 # Initializing the last distance
+
 last_distance = 0
 
 # Creating the car class
+
 class Car(Widget):
 
     angle = NumericProperty(0)                                  # the angle between the x-axis and the axis of the direction of the car
@@ -112,6 +120,7 @@ class Ball3(Widget):
     pass
 
 # Creating the game class
+
 class Game(Widget):
 
     car = ObjectProperty(None)
@@ -133,6 +142,9 @@ class Game(Widget):
         global goal_y
         global RIGHT
         global TOP
+        global last_x
+        global last_y
+        global GOAL
 
         RIGHT = self.width
         TOP = self.height
@@ -156,14 +168,18 @@ class Game(Widget):
         self.ball2.pos = self.car.sensor2
         self.ball3.pos = self.car.sensor3
 
+        last_reward = 0
+
         if sand[int(self.car.x), int(self.car.y)] > 0:
             self.car.velocity = Vector(1, 0).rotate(self.car.angle)
-            last_reward += -3
+            # self.car.x = last_x
+            # self.car.y = last_y
+            last_reward = -3
         else:
             self.car.velocity = Vector(6, 0).rotate(self.car.angle)
             last_reward = -0.2
             if distance < last_distance:
-                last_reward = 0.1
+                last_reward += 0.1           # last_reward = 0.1
 
         if action != 0:
             last_reward += -0.15
@@ -171,40 +187,53 @@ class Game(Widget):
         last_reward += (last_distance - distance) / 250.0
         last_reward += -3 * (self.car.signal3 - 1.0) * (self.car.signal3)
 
-        if self.car.x < 10:
-            self.car.x = 10
-            last_reward = -1
-        if self.car.x > self.width - 10:
-            self.car.x = self.width - 10
-            last_reward = -1
-        if self.car.y < 10:
-            self.car.y = 10
-            last_reward = -1
-        if self.car.y > self.height - 10:
-            self.car.y = self.height - 10
-            last_reward = -1
+        BOUNDARAY = 20
+        if self.car.x < BOUNDARAY:
+            self.car.x = BOUNDARAY
+            last_reward += -1               # = -1
+        if self.car.x > self.width - BOUNDARAY:
+            self.car.x = self.width - BOUNDARAY
+            last_reward += -1               # = -1
+        if self.car.y < BOUNDARAY:
+            self.car.y = BOUNDARAY
+            last_reward += -1               # = -1
+        if self.car.y > self.height - BOUNDARAY:
+            self.car.y = self.height - BOUNDARAY
+            last_reward += -1               # = -1
 
         if distance < 100:
             goal_x = self.width - goal_x
             goal_y = self.height - goal_y
+            if GOAL == 'airport':
+                print('Reach Airport!')
+                GOAL = 'downtown'
+            elif GOAL == 'downtown':
+                print('Reach Downtown!')
+                GOAL = 'airport'
+            
         last_distance = distance
-
+        last_x = self.car.x
+        last_y = self.car.y
+        # print(last_reward)
 # Adding the painting tools
+
+RAD = 30
 class MyPaintWidget(Widget):
 
     def on_touch_down(self, touch):
         with self.canvas:
             Color(0.1171875, 0.53125, 0.65265)
-            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 40)
-            sand[int(touch.x) - 20: int(touch.x) + 20, int(touch.y) - 20: int(touch.y) + 20] = 1
+            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 20)
+            sand[int(touch.x) - RAD: int(touch.x) + RAD, int(touch.y) - RAD: int(touch.y) + RAD] = 1
 
     def on_touch_move(self, touch):
         if touch.button == 'left':
             touch.ud['line'].points += [touch.x, touch.y]
-            touch.ud['line'].width = 40
-            sand[int(touch.x) - 20 : int(touch.x) + 20, int(touch.y) - 20 : int(touch.y) + 20] = 1
+            touch.ud['line'].width = 20
+            sand[int(touch.x) - RAD : int(touch.x) + RAD, int(touch.y) - RAD : int(touch.y) + RAD] = 1
 
 # Adding the API Buttons (clear, save and load)
+
 class CarApp(App):
     global parent
 
@@ -241,6 +270,7 @@ class CarApp(App):
         dqn.load()
 
 # Running the whole thing
+
 if __name__ == '__main__':
     CarApp().run()
     CarApp().run()

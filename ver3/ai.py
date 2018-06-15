@@ -23,11 +23,13 @@ class Network(nn.Module):                       # inheriting from this module pa
         self.input_size = input_size
         self.nb_action = nb_action
         self.fc1 = nn.Linear(input_size, 30)    # fc: full connection
-        self.fc2 = nn.Linear(30, nb_action)     # input_size * 30 * nb_action
+        self.fc2 = nn.Linear(30, 30)            # fc2
+        self.fc3 = nn.Linear(30, nb_action)     # input_size * 30 * nb_action
         
     def forward(self, state):
-        x = F.relu(self.fc1(state))
-        q_values = self.fc2(x)
+        x1 = F.relu(self.fc1(state))
+        x2 = F.relu(x1)
+        q_values = self.fc3(x2)
         return q_values
     
 # Implementing Experience Replay
@@ -62,7 +64,7 @@ class DQN():
         self.last_reward = 0
     
     def select_action(self, state):
-        probs = F.softmax(self.model(Variable(state, volatile = True)) * 7)   # T = 100
+        probs = F.softmax(self.model(Variable(state, requires_grad = True)) * 75, dim = 1)   # temperature
         m = torch.distributions.Categorical(probs)
         action = m.sample()
         return action

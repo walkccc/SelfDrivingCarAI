@@ -3,12 +3,14 @@
 ###################################
 
 # Importing the libraries
+
 import numpy as np
 from random import random, randint
 import matplotlib.pyplot as plt
 import time
 
 # Importing the Kivy packages
+
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.button import Button
@@ -22,36 +24,42 @@ from ai import DQN
 Config.set('input', 'mouse', 'mouse, multitouch_on_demand')     # Adding this line if we don't want the right click to put a red point
 
 # Introducing last_x and last_y, used to keep the last point in memory when we draw the sand on the map
+
 last_x = 0      # last coordinates of x in the last drawing
 last_y = 0      # last coordinates of y in the last drawing
 n_points = 0    # the total number of points in the last drawing
 length = 0      # the length of the last drawing
-last_x = 0
-last_y = 0
-GOAL = 'airport'
 
 # Getting our AI, which we call "dqn", and that contains our neural network that represents our Q-function
-dqn = DQN(5, 3, 0.9)                    # 5 signals, 3 actions, gamma = 0.9
+
+dqn = DQN(6, 3, 0.9)                    # 5 signals, 3 actions, gamma = 0.9
 action2rotation = [0, 15, -15]          # action = 0: no rotation, action = 1, rotate 20 degrees, action = 2, rotate -20 degrees
 last_reward = 0                         # initializing the last reward
+last_time = 0                           # initializing the last time
 scores = []                             # initializing the mean score curve (sliding window of the rewards) w.r.t time
 
 # Initializing the map
+
 first_update = True                     # using this trick to initialize the map only once
+start_time = time.time()
 def init():
     global sand                         # sand is an array that has as many cells as our graphic interface has pixels. Each cell has a one if there is sand, 0 otherwise.
     global goal_x                       # x-coordinate of the goal (where the car has to go, that is the up-left corner or the bot-right corner)
     global goal_y                       # y-coordinate of the goal (where the car has to go, that is the up-left corner or the bot-right corner)
     global first_update
+    global last_time
+    global start_time
     sand = np.zeros((RIGHT, TOP))       # initializing the sand array with only zeros
     goal_x = 30                         # the goal to reach is at the upper left of the map (the x-coordinate is 20 and not 0 because the car gets bad reward if it touches the wall)
     goal_y = TOP - 30                   # the goal to reach is at the upper left of the map (y-coordinate)
     first_update = False                # trick to initialize the map only once
 
 # Initializing the last distance
+
 last_distance = 0
 
 # Creating the car class
+
 class Car(Widget):
 
     angle = NumericProperty(0)                                  # the angle between the x-axis and the axis of the direction of the car
@@ -113,6 +121,7 @@ class Ball3(Widget):
     pass
 
 # Creating the game class
+
 class Game(Widget):
 
     car = ObjectProperty(None)
@@ -134,6 +143,8 @@ class Game(Widget):
         global goal_y
         global RIGHT
         global TOP
+        global last_time
+        global start_time
 
         RIGHT = self.width
         TOP = self.height
@@ -143,7 +154,7 @@ class Game(Widget):
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
         orientation = Vector(*self.car.velocity).angle((xx, yy)) / 180.
-        last_signal = [self.car.signal1, self.car.signal2, self.car.signal3, orientation, -orientation]
+        last_signal = [self.car.signal1, self.car.signal2, self.car.signal3, orientation, -orientation, last_time]
         action = dqn.update(last_reward, last_signal)
         scores.append(dqn.score())
         rotation = action2rotation[action]
@@ -164,44 +175,51 @@ class Game(Widget):
 
         if self.car.x < 10:
             self.car.x = 10
+            print('Hit Left!')
             last_reward = -1
         if self.car.x > self.width - 10:
             self.car.x = self.width - 10
+            print('Hit Right!')
             last_reward = -1
         if self.car.y < 10:
             self.car.y = 10
+            print('Hit Bottom!')
             last_reward = -1
         if self.car.y > self.height - 10:
             self.car.y = self.height - 10
+            print('Hit Top!')
             last_reward = -1
+
+        last_time = time.time() - start_time
+        if last_time >= 10 and last_time < 20:
+            last_reward -= 0.3
+        elif last_time >= 20 and last_time < 30:
+            last_reward -= 0.5
+        elif last_time > 30:
+            last_reward -= 1
 
         if distance < 100:
             goal_x = self.width - goal_x
             goal_y = self.height - goal_y
-            if GOAL == 'airport':
-                print('Reach Airport!')
-                GOAL = 'downtown'
-            elif GOAL == 'downtown':
-                print('Reach Downtown!')
-                GOAL = 'airport'
+            print('Reach the goal!')
         last_distance = distance
+        print(start_time, last_time, last_reward)
 
 # Adding the painting tools
 
-RAD = 30
 class MyPaintWidget(Widget):
 
     def on_touch_down(self, touch):
         with self.canvas:
             Color(0.1171875, 0.53125, 0.65265)
-            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 20)
-            sand[int(touch.x) - RAD: int(touch.x) + RAD, int(touch.y) - RAD: int(touch.y) + RAD] = 1
+            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 40)
+            sand[int(touch.x) - 20: int(touch.x) + 20, int(touch.y) - 20: int(touch.y) + 20] = 1
 
     def on_touch_move(self, touch):
         if touch.button == 'left':
             touch.ud['line'].points += [touch.x, touch.y]
-            touch.ud['line'].width = 20
-            sand[int(touch.x) - RAD : int(touch.x) + RAD, int(touch.y) - RAD : int(touch.y) + RAD] = 1
+            touch.ud['line'].width = 40
+            sand[int(touch.x) - 20 : int(touch.x) + 20, int(touch.y) - 20 : int(touch.y) + 20] = 1
 
 # Adding the API Buttons (clear, save and load)
 
@@ -241,6 +259,7 @@ class CarApp(App):
         dqn.load()
 
 # Running the whole thing
+
 if __name__ == '__main__':
     CarApp().run()
     CarApp().run()
